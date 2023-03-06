@@ -236,7 +236,7 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 				return nil, func() {}, io.EOF
 			}
 
-			if time.Now().Sub(c.prevFrameTime).Seconds() >= 1 {
+			if time.Now().Sub(c.prevFrameTime) >= p.DiscardFramesOlderThan {
 				for toDiscard := bufferedFrameCount; toDiscard > 0; toDiscard-- {
 					_ = cam.WaitForFrame(readTimeoutSec)
 					_, _ = cam.ReadFrame()

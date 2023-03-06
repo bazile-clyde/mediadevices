@@ -236,9 +236,10 @@ type VideoConstraints struct {
 
 // Video represents a video's constraints
 type Video struct {
-	Width, Height int
-	FrameRate     float32
-	FrameFormat   frame.Format
+	Width, Height          int
+	FrameRate              float32
+	FrameFormat            frame.Format
+	DiscardFramesOlderThan time.Duration
 }
 
 // AudioConstraints represents an audio's constraints
