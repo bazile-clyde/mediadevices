@@ -246,6 +246,15 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 				return nil, func() {}, err
 			}
 
+			if time.Now().Sub(c.prevFrameTime).Seconds() >= 1 {
+				for toDiscard := bufferedFrameCount; toDiscard > 0; toDiscard-- {
+					_, _ = cam.ReadFrame()
+					_ = cam.WaitForFrame(readTimeoutSec)
+				}
+			}
+
+			c.prevFrameTime = time.Now()
+
 			b, err := cam.ReadFrame()
 			if err != nil {
 				// Camera has been stopped.
@@ -272,20 +281,7 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 		return nil, func() {}, errEmptyFrame
 	}
 
-	r := video.ReaderFunc(func() (img image.Image, release func(), err error) {
-		// If frames are requested at less than 1fps, assume snapshots, not streaming, and discard all
-		// buffered frames to reduce staleness.
-		if time.Now().Sub(c.prevFrameTime).Seconds() >= 1 {
-			for toDiscard := bufferedFrameCount; toDiscard > 0; toDiscard-- {
-				if _, _, err = readerFunc(); err != nil {
-					return nil, func() {}, err
-				}
-			}
-		}
-		c.prevFrameTime = time.Now()
-		return readerFunc()
-	})
-
+	r := video.ReaderFunc(readerFunc)
 	return r, nil
 }
 
