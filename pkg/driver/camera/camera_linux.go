@@ -224,7 +224,7 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
 	var buf []byte
-	readerFunc := func() (img image.Image, release func(), err error) {
+	r := video.ReaderFunc(func() (img image.Image, release func(), err error) {
 		// Lock to avoid accessing the buffer after StopStreaming()
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
@@ -236,6 +236,13 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 				return nil, func() {}, io.EOF
 			}
 
+			if time.Now().Sub(c.prevFrameTime).Seconds() >= 1 {
+				for toDiscard := bufferedFrameCount; toDiscard > 0; toDiscard-- {
+					_ = cam.WaitForFrame(readTimeoutSec)
+					_, _ = cam.ReadFrame()
+				}
+			}
+
 			err := cam.WaitForFrame(readTimeoutSec)
 			switch err.(type) {
 			case nil:
@@ -244,12 +251,6 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 			default:
 				// Camera has been stopped.
 				return nil, func() {}, err
-			}
-
-			if time.Now().Sub(c.prevFrameTime).Seconds() >= 1 {
-				for toDiscard := bufferedFrameCount; toDiscard > 0; toDiscard-- {
-					_, _ = cam.ReadFrame()
-				}
 			}
 
 			c.prevFrameTime = time.Now()
@@ -278,9 +279,8 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 			return decoder.Decode(buf[:n], p.Width, p.Height)
 		}
 		return nil, func() {}, errEmptyFrame
-	}
+	})
 
-	r := video.ReaderFunc(readerFunc)
 	return r, nil
 }
 
