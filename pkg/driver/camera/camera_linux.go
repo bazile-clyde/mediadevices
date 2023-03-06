@@ -236,10 +236,12 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 				return nil, func() {}, io.EOF
 			}
 
-			if time.Now().Sub(c.prevFrameTime) >= p.DiscardFramesOlderThan {
-				for toDiscard := bufferedFrameCount; toDiscard > 0; toDiscard-- {
-					_ = cam.WaitForFrame(readTimeoutSec)
-					_, _ = cam.ReadFrame()
+			if p.DiscardFramesOlderThan != 0 {
+				if time.Now().Sub(c.prevFrameTime) >= p.DiscardFramesOlderThan {
+					for toDiscard := bufferedFrameCount; toDiscard > 0; toDiscard-- {
+						_ = cam.WaitForFrame(readTimeoutSec)
+						_, _ = cam.ReadFrame()
+					}
 				}
 			}
 
@@ -253,13 +255,12 @@ func (c *camera) VideoRecord(p prop.Media) (video.Reader, error) {
 				return nil, func() {}, err
 			}
 
-			c.prevFrameTime = time.Now()
-
 			b, err := cam.ReadFrame()
 			if err != nil {
 				// Camera has been stopped.
 				return nil, func() {}, err
 			}
+			c.prevFrameTime = time.Now()
 
 			// Frame is empty.
 			// Retry reading and return errEmptyFrame if it exceeds maxEmptyFrameCount.
