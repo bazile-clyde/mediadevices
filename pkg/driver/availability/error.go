@@ -5,9 +5,9 @@ import (
 )
 
 var (
-	ErrUnimplemented = NewError("not implemented")
-	ErrBusy          = NewError("device or resource busy")
-	ErrNoDevice      = NewError("no such device")
+	ErrUnimplemented = errors.New("not implemented")
+	ErrBusy          = errors.New("device or resource busy")
+	ErrNoDevice      = errors.New("no such device")
 )
 
 type errorString struct {
@@ -16,11 +16,6 @@ type errorString struct {
 
 func NewError(text string) error {
 	return &errorString{text}
-}
-
-func IsError(err error) bool {
-	var target *errorString
-	return errors.As(err, &target)
 }
 
 func (e *errorString) Error() string {
