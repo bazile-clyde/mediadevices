@@ -31,6 +31,9 @@ const (
 
 	// FormatZ16 https://www.kernel.org/doc/html/v5.9/userspace-api/media/v4l/pixfmt-z16.html
 	FormatZ16 = "Z16"
+
+	// FormatRG10 https://www.kernel.org/doc/html/v5.9/userspace-api/media/v4l/pixfmt-srggb10.html
+	FormatRG10 = "RG10"
 )
 
 var decoderMap = map[Format]decoderFunc{
@@ -42,6 +45,7 @@ var decoderMap = map[Format]decoderFunc{
 	FormatUYVY:  decodeUYVY,
 	FormatMJPEG: decodeMJPEG,
 	FormatZ16:   decodeZ16,
+	FormatRG10:  decodeRG10,
 }
 
 func NewDecoder(f Format) (Decoder, error) {
